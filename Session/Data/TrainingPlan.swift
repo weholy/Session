@@ -7,15 +7,25 @@ final class TrainingPlan {
     var generatedAt: Date
     var source: PlanSource
     var revision: Int
+    var periodization: String
+    var goalTargets: [GoalTarget]
 
     @Relationship(deleteRule: .cascade, inverse: \PlannedDay.plan)
     var days: [PlannedDay]
 
-    init(semesterIndex: Int, source: PlanSource, revision: Int = 1) {
+    init(
+        semesterIndex: Int,
+        source: PlanSource,
+        revision: Int = 1,
+        periodization: String = "",
+        goalTargets: [GoalTarget] = []
+    ) {
         self.semesterIndex = semesterIndex
         self.generatedAt = .now
         self.source = source
         self.revision = revision
+        self.periodization = periodization
+        self.goalTargets = goalTargets
         self.days = []
     }
 }
