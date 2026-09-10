@@ -1,0 +1,105 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Unsigned IPA
+    runs-on: macos-26
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: |
+          set -euo pipefail
+          VERSION=2.43.0
+          curl -fsSL -o xcodegen.zip \
+            "https://github.com/yonaskolb/XcodeGen/releases/download/$VERSION/xcodegen.zip"
+          unzip -q xcodegen.zip
+          sudo mkdir -p /usr/local/bin /usr/local/share
+          sudo cp -R xcodegen/share/xcodegen /usr/local/share/
+          sudo cp xcodegen/bin/xcodegen /usr/local/bin/xcodegen
+          xcodegen --version
+
+      - name: Prepare secrets
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -n "${GROQ_API_KEY:-}" ]; then
+            printf 'GROQ_API_KEY = %s\n' "$GROQ_API_KEY" > Config/Secrets.xcconfig
+          else
+            cp Config/Secrets.example.xcconfig Config/Secrets.xcconfig
+          fi
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Restore build cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/DerivedData
+            ~/Library/Caches/org.swift.swiftpm
+          key: xcode-${{ runner.os }}-${{ hashFiles('Session/**/*.swift', 'project.yml') }}
+          restore-keys: |
+            xcode-${{ runner.os }}-
+
+      - name: Archive
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project Session.xcodeproj \
+            -scheme Session \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/Session.xcarchive \
+            -derivedDataPath build/DerivedData \
+            -clonedSourcePackagesDirPath build/SourcePackages \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            SWIFT_COMPILATION_MODE=incremental \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            DEVELOPMENT_TEAM=""
+
+      - name: Package unsigned IPA
+        run: |
+          set -euo pipefail
+          VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "build/Session.xcarchive/Products/Applications/Session.app/Info.plist")
+          mkdir -p build/Payload
+          cp -r "build/Session.xcarchive/Products/Applications/Session.app" build/Payload/
+          cd build && zip -qr "Session_${VERSION}.ipa" Payload
+
+      - name: Publish IPA to the rolling release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          IPA=$(ls build/Session_*.ipa | head -1)
+          NOTE="Сборка из коммита ${GITHUB_SHA:0:7} — $(date -u '+%Y-%m-%d %H:%M UTC')"
+          if gh release view latest >/dev/null 2>&1; then
+            gh release edit latest --notes "$NOTE" --title "Последняя сборка"
+            gh release upload latest "$IPA" --clobber
+          else
+            gh release create latest "$IPA" --title "Последняя сборка" --notes "$NOTE" --prerelease
+          fi
+
+      - name: Upload IPA artifact
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: Session-unsigned-ipa
+          path: build/Session_*.ipa
+          retention-days: 3

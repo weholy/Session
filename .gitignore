@@ -1,0 +1,13 @@
+.DS_Store
+.claude/
+.build/
+DerivedData/
+*.xcodeproj
+xcuserdata/
+.swiftpm/
+build/
+Config/Secrets.xcconfig
+*.ipa
+*.xcarchive
+*.log
+референсы/
