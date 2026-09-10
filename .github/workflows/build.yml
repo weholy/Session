@@ -18,7 +18,7 @@ jobs:
     runs-on: macos-26
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install XcodeGen
         run: |
@@ -47,7 +47,7 @@ jobs:
         run: xcodegen generate
 
       - name: Restore build cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             build/DerivedData
@@ -98,8 +98,9 @@ jobs:
 
       - name: Upload IPA artifact
         continue-on-error: true
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: Session-unsigned-ipa
           path: build/Session_*.ipa
           retention-days: 3
+          overwrite: true
