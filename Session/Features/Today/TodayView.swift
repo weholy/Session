@@ -50,14 +50,7 @@ private struct TodayWorkoutCard: View {
     var body: some View {
         Button(action: onTap) {
             ZStack(alignment: .bottomLeading) {
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.12, green: 0.24, blue: 0.48),
-                        Color(red: 0.05, green: 0.08, blue: 0.19)
-                    ],
-                    startPoint: .topTrailing,
-                    endPoint: .bottomLeading
-                )
+                PhotoBackdrop(name: Photo.cardPull)
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text(badge)
