@@ -1,23 +1,17 @@
 import SwiftUI
+import SwiftData
 
 struct RootView: View {
-    @State private var tab: AppTab = .today
+    @Environment(\.modelContext) private var context
+    @Query private var states: [AppState]
 
     var body: some View {
-        TabView(selection: $tab) {
-            Tab("Календарь", systemImage: "square.grid.2x2", value: AppTab.calendar) {
-                CalendarHomeView()
-            }
-            Tab("Сегодня", systemImage: "bolt.fill", value: AppTab.today) {
-                TodayView()
-            }
-            Tab("Прогресс", systemImage: "chart.xyaxis.line", value: AppTab.progress) {
-                ProgressDashboardView()
-            }
-            Tab("Профиль", systemImage: "person.fill", value: AppTab.profile) {
-                ProfileView()
+        Group {
+            if states.first?.onboardingComplete == true {
+                MainTabsView()
+            } else {
+                OnboardingView(context: context)
             }
         }
-        .tint(Palette.accent)
     }
 }
