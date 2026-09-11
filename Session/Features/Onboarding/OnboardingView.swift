@@ -63,7 +63,7 @@ struct OnboardingView: View {
                             .foregroundStyle(Palette.accent)
                             .padding(.horizontal, 14)
                             .padding(.vertical, 9)
-                            .glassEffect(.regular.interactive(), in: Capsule())
+                            .glassCapsule(interactive: true)
                     }
                 }
                 .padding(.horizontal, 16)
@@ -148,23 +148,31 @@ private struct IntroStepView: View {
     let onStart: () -> Void
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            PhotoBackdrop(name: Photo.heroOnboarding, darkening: 0.62).ignoresSafeArea()
+        GeometryReader { geo in
+            ZStack(alignment: .bottom) {
+                PhotoBackdrop(name: Photo.heroOnboarding, darkening: 0.88, scrimStart: 0.35)
+                    .frame(width: geo.size.width, height: geo.size.height)
 
-            VStack(alignment: .leading, spacing: 14) {
-                Text("Сессия")
-                    .font(.display(42))
-                    .foregroundStyle(.white)
-                Text("Домашняя калистеника до контрольного теста. Тренер собирает план под тебя и держит в графике до самого экзамена.")
-                    .font(.system(size: 16))
-                    .foregroundStyle(.white.opacity(0.85))
-                Button("Начать", action: onStart)
-                    .buttonStyle(.glassAction(tint: Palette.accent))
-                    .padding(.top, 6)
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Сессия")
+                        .font(.display(44))
+                        .foregroundStyle(.white)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text("Домашняя калистеника до контрольного теста. Тренер собирает план под тебя и держит в графике до самого экзамена.")
+                        .font(.system(size: 16))
+                        .foregroundStyle(.white.opacity(0.88))
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Button("Начать", action: onStart)
+                        .buttonStyle(.glassAction(tint: Palette.accent))
+                        .padding(.top, 4)
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, max(24, geo.safeAreaInsets.bottom + 12))
             }
-            .padding(24)
-            .padding(.bottom, 28)
         }
+        .ignoresSafeArea()
     }
 }
 
@@ -173,7 +181,9 @@ private struct BuildingStepView: View {
 
     var body: some View {
         ZStack {
-            PhotoBackdrop(name: Photo.heroOnboarding, darkening: 0.58).ignoresSafeArea()
+            PhotoBackdrop(name: Photo.heroOnboarding, darkening: 0.82, scrimStart: 0)
+                .ignoresSafeArea()
+
             VStack(spacing: 18) {
                 ProgressView()
                     .tint(.white)
@@ -184,6 +194,7 @@ private struct BuildingStepView: View {
                     .contentTransition(.opacity)
                     .animation(.easeInOut, value: line)
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 40)
             }
         }

@@ -149,8 +149,8 @@ final class OnboardingViewModel {
         }
         try? context.save()
 
-        if let first = specs.first {
-            await plan.buildSemester(first, brief: brief)
+        for spec in specs {
+            await plan.buildSemester(spec, brief: brief)
         }
 
         let state = AppStateStore.load(in: context)

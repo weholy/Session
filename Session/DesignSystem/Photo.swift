@@ -26,11 +26,24 @@ enum Photo {
         guard let focus else { return cardFull }
         return card(for: focus)
     }
+
+    static func forDay(kind: DayKind, exercises: [Exercise]) -> String {
+        switch kind {
+        case .rest: return cardRest
+        case .test, .miniTest: return testDay
+        case .training, .maintenance:
+            guard !exercises.isEmpty else { return cardFull }
+            var counts: [ExerciseCategory: Int] = [:]
+            for exercise in exercises { counts[exercise.category, default: 0] += 1 }
+            return card(for: counts.max(by: { $0.value < $1.value })?.key ?? .conditioning)
+        }
+    }
 }
 
 struct PhotoBackdrop: View {
     let name: String
-    var darkening: Double = 0.72
+    var darkening: Double = 0.8
+    var scrimStart: Double = 0.4
 
     var body: some View {
         Image(name)
@@ -38,10 +51,15 @@ struct PhotoBackdrop: View {
             .scaledToFill()
             .overlay {
                 LinearGradient(
-                    colors: [.black.opacity(darkening * 0.2), .black.opacity(darkening)],
+                    stops: [
+                        .init(color: .black.opacity(0), location: 0),
+                        .init(color: .black.opacity(0.05), location: scrimStart),
+                        .init(color: .black.opacity(darkening), location: 1)
+                    ],
                     startPoint: .top,
                     endPoint: .bottom
                 )
             }
+            .clipped()
     }
 }
